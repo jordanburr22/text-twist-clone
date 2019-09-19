@@ -5,7 +5,7 @@ $(document).ready(function() {
 
     $.ajax({
         method: "GET",
-        url: "http://localhost:8080",
+        url: "api.php",
         success: data => { 
             //console.log(data);
             $('#currentRack').html(data[0]['rack']);
@@ -24,7 +24,7 @@ $(document).ready(function() {
             method: "POST",
             data: data,
             dataType: "json",
-            url: "http://localhost:8080",
+            url: "api.php",
             success: data=>{ alert(data);},
             error: data=>{alert(data.responseText); }
         });
