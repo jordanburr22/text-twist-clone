@@ -1,40 +1,82 @@
 <?php
 
     //this is the basic way of getting a database handler from PDO, PHP's built in quasi-ORM
-   $dbhandle = new PDO("sqlite:scrabble.sqlite") or die("Failed to open DB");
+    $dbhandle = new PDO("sqlite:scrabble.sqlite") or die("Failed to open DB");
     if (!$dbhandle) die ($error);
- 
-    //this is a sample query which gets some data, the order by part shuffles the results
-    //the limit 0, 10 takes the first 10 results.
-    // you might want to consider taking more results, implementing "pagination", 
-    // ordering by rank, etc.
-    $query = "SELECT rack FROM racks WHERE length=7 order by random() limit 1";
-    
-    //this next line could actually be used to provide user_given input to the query to 
-    //avoid SQL injection attacks
-    $statement = $dbhandle->prepare($query);
-    $statement->execute();
-    $results = $statement->fetchAll(PDO::FETCH_ASSOC);
 
-
-    $verb = $_SERVER['REQUEST_METHOD'];
-    //$uri = $_SERVER['PATH_INFO'];
-   // $routes = explode("/", $uri);
-
-   
-    if ($_REQUEST["rack"] && $_REQUEST["guess"]){
-        $results = $_REQUEST["guess"] . " in " . $_REQUEST["rack"];
-    }
-    
-    
-        
     //this part is perhaps overkill but I wanted to set the HTTP headers and status code
     //making to this line means everything was great with this request
     header('HTTP/1.1 200 OK');
     //this lets the browser know to expect json
     header('Content-Type: application/json');
     header('Access-Control-Allow-Origin: http://localhost:8080');
+    
+    $verb = $_SERVER['REQUEST_METHOD'];
+    $result = array();
+    $answers = array();
+
+    // Function to print all sub strings 
+    function combinationUtil($words, $n, $r, $index, $data, $i) { 
+        global $result;
+        global $answers;
+        global $dbhandle;
+        // Current cobination 
+        // is ready, print it 
+        if ($index == $r) { 
+            $currentWord = "";
+            for ($j = 0; $j < $r; $j++) {
+                $currentWord = $currentWord . $data[$j];
+            }
+
+            $statement = $dbhandle->prepare("SELECT * FROM racks WHERE rack=?");
+            $statement->execute([$currentWord]);
+            $subrack = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+            if($subrack && !in_array($currentWord, $result)) {
+                array_push($result, $currentWord); 
+                $statement = $dbhandle->prepare("SELECT words FROM racks WHERE rack=?");
+                $statement->execute([$currentWord]);
+                $subrack = $statement->fetchAll(PDO::FETCH_ASSOC);
+                array_push($answers, explode("@@", $subrack[0]['words'])[0]);
+            }
+            return; 
+        } 
+    
+        // When no more elements are  
+        // there to put in data[] 
+        if ($i >= $n) 
+            return; 
+    
+        // current is included, put 
+        // next at next location 
+        $data[$index] = $words[$i]; 
+        combinationUtil($words, $n, $r, $index + 1, $data, $i + 1); 
+    
+        // current is excluded, replace  
+        // it with next (Note that i+1  
+        // is passed, but index is not changed) 
+        combinationUtil($words, $n, $r, $index, $data, $i + 1); 
+    } 
+    
+    if($verb == "GET") {
+        if($_REQUEST["function"] == "getRack") {
+            $query = "SELECT rack FROM racks WHERE length=7 order by random() limit 1";
+            $statement = $dbhandle->prepare($query);
+            $statement->execute();
+            echo json_encode($statement->fetchAll(PDO::FETCH_ASSOC));
+        } else if($_REQUEST["function"] == "getWords") {
+            $words = str_split($str);
+            $data = array();
+            for($j=2; $j <8; $j++)
+                combinationUtil($_REQUEST["rack"], strlen($_REQUEST["rack"]), $j, 0, $data, 0);
+            //echo json_encode($result);
+            echo json_encode($answers);
+        }
+    }
+    
+        
+    
     // Use json_encode() function 
-    echo json_encode($results); 
+    //echo json_encode($results); 
     
 ?>
