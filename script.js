@@ -2,11 +2,18 @@ $(document).ready(function() {
 
     let score = 0;
     let answers = [];
+    let correct = [];
     let $guessInput = $('#input');
-    let rack = "";
 
     let showBlanks = function(words) {
-        console.log(words);
+        $('#blanks').html('');
+        words.map(word => {
+            let newWord = "";
+            for(let i = 0; i < word.length; i++) {
+                newWord += "_ ";
+            }
+            $('#blanks').append(`<li><span id=${word} class="hidden">${newWord}</span></li>`);
+        });
     }
 
     $.ajax({
@@ -17,7 +24,7 @@ $(document).ready(function() {
         dataType: "json",
         url: "api.php",
         success: data => { 
-            $('#currentRack').append(data[0]['rack']);
+            $('#currentRack').append(data);
         },
         error: data=>{
             console.log(data.responseText); 
@@ -26,50 +33,47 @@ $(document).ready(function() {
             $.ajax({
             method: "GET",
             data: {
-                "function": "getWords",
+                "function": "getInfo",
                 "rack": data
             },
             dataType: "json",
             url: "api.php",
             success: data => {
-                showBlanks(data);
+                data['words'].map(word => {
+                    answers.push(word);
+                })
+                showBlanks(data['words']);          
             },
             error: data => {
                 console.log(data.responseText); 
                 console.log("failed to get the words from server");
             }
-        })
+            });
         }   
     );
 
     
 
-    $('button').click(function() {
-
-        let data = {
-            rack: rack,
-            guess: $guessInput[0].value
-        };
-
-        $.ajax({
-            method: "POST",
-            data: data,
-            dataType: "json",
-            url: "api.php",
-            success: data=>{ 
-                score+=1;
-                $("#score").html = score;
-                alert(data);
-            },
-            error: data=>{
-                alert(data.responseText); 
-                
-            }
-        });
+    $('button').click(function() {     
+    
+        const input = $guessInput[0].value.toUpperCase();
+        if(correct.includes(input)) {
+            console.log("you guessed this already!");
+        } else if(answers.includes(input)) {
+            correct.push(input);
+            delete answers[answers.indexOf(input)];
+            $('#'+input).text(input);
+            score++;
+            $('#score').text(score);
+        } else {
+            console.log("try again");
+        }
 
         $('#lastGuess').html('<p> Last Guess: ' + $guessInput[0].value +'</p>');
         $guessInput.val('');
 
+        if(answers.length == 0) 
+            console.log("YOU WIN!");
     });
     
 });

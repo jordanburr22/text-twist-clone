@@ -1,5 +1,5 @@
 <?php
-
+    
     //this is the basic way of getting a database handler from PDO, PHP's built in quasi-ORM
     $dbhandle = new PDO("sqlite:scrabble.sqlite") or die("Failed to open DB");
     if (!$dbhandle) die ($error);
@@ -14,12 +14,14 @@
     $verb = $_SERVER['REQUEST_METHOD'];
     $result = array();
     $answers = array();
+    $lengths = array();
 
     // Function to print all sub strings 
     function combinationUtil($words, $n, $r, $index, $data, $i) { 
         global $result;
         global $answers;
         global $dbhandle;
+        global $lengths;
         // Current cobination 
         // is ready, print it 
         if ($index == $r) { 
@@ -34,10 +36,12 @@
 
             if($subrack && !in_array($currentWord, $result)) {
                 array_push($result, $currentWord); 
-                $statement = $dbhandle->prepare("SELECT words FROM racks WHERE rack=?");
+                $statement = $dbhandle->prepare("SELECT * FROM racks WHERE rack=?");
                 $statement->execute([$currentWord]);
                 $subrack = $statement->fetchAll(PDO::FETCH_ASSOC);
                 array_push($answers, explode("@@", $subrack[0]['words'])[0]);
+                array_push($lengths, array((int)$subrack[0]['length'])[0]);
+                //echo json_encode($lengths);
             }
             return; 
         } 
@@ -63,20 +67,21 @@
             $query = "SELECT rack FROM racks WHERE length=7 order by random() limit 1";
             $statement = $dbhandle->prepare($query);
             $statement->execute();
-            echo json_encode($statement->fetchAll(PDO::FETCH_ASSOC));
-        } else if($_REQUEST["function"] == "getWords") {
+            $rack = $statement->fetchAll(PDO::FETCH_ASSOC);
+            
+            echo json_encode($rack[0]['rack']);
+        } else if($_REQUEST["function"] == "getInfo") {
             $words = str_split($str);
             $data = array();
             for($j=2; $j <8; $j++)
                 combinationUtil($_REQUEST["rack"], strlen($_REQUEST["rack"]), $j, 0, $data, 0);
             //echo json_encode($result);
-            echo json_encode($answers);
-        }
+            $lengthsandwords = array();
+            $lengthsandwords['lengths'] = $lengths;
+            $lengthsandwords['words'] = $answers;
+            echo json_encode($lengthsandwords);
+        } 
     }
-    
-        
-    
-    // Use json_encode() function 
-    //echo json_encode($results); 
+ 
     
 ?>
