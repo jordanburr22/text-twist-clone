@@ -1,22 +1,28 @@
-
 <html>
   <title>Text Twist</title>
   <head>
+    <link rel="stylesheet" type="text/css" href="mystyle.css" />
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
     <script src="script.js"></script>
   </head>
   <body>
-    <h1>Welcome to Text Twist (clone)!</h1>
+    <h1 id="title">Welcome to Text Twist (clone)!</h1>
     <hr />
-    <h2 id="currentRack">Your rack: </h2>
-    <div>
-      <input type="text" id="input" placeholder="Enter a word" />
-      <button id="submit">Submit Word</button>
+    <div id="info">
+      <h2 id="currentRack"></h2>
+      <div>
+        <input type="text" id="input" placeholder="Enter a word" />
+        <button id="submit">Submit Word</button>
+      </div>
+      <p id="message">Type a word to guess!</p>
+      <div id="scoreInfo">
+          <h1 id="score" style='display: inline-block;'></h1>
+          <h1 style='display: inline-block;'>/</h1>
+          <h1 id="winScore" style='display: inline-block;'></h1>
+        </h1>
+      </div>
     </div>
-    <p id="lastGuess">Last Guess:</p>
-    <h2>Score: <div id="score">0</div></h2>
     <hr />
-    <ul id="blanks">
-    </ul>
+    <ul id="blanks"></ul>
   </body>
 </html>

@@ -18,10 +18,10 @@
 
     // Function to print all sub strings 
     function combinationUtil($words, $n, $r, $index, $data, $i) { 
-        global $result;
         global $answers;
         global $dbhandle;
         global $lengths;
+        global $result;
         // Current cobination 
         // is ready, print it 
         if ($index == $r) { 
@@ -35,13 +35,11 @@
             $subrack = $statement->fetchAll(PDO::FETCH_ASSOC);
 
             if($subrack && !in_array($currentWord, $result)) {
-                array_push($result, $currentWord); 
                 $statement = $dbhandle->prepare("SELECT * FROM racks WHERE rack=?");
                 $statement->execute([$currentWord]);
                 $subrack = $statement->fetchAll(PDO::FETCH_ASSOC);
                 array_push($answers, explode("@@", $subrack[0]['words'])[0]);
-                array_push($lengths, array((int)$subrack[0]['length'])[0]);
-                //echo json_encode($lengths);
+                array_push($lengths, array((int)$subrack[0]['length']));
             }
             return; 
         } 
@@ -70,17 +68,34 @@
             $rack = $statement->fetchAll(PDO::FETCH_ASSOC);
             
             echo json_encode($rack[0]['rack']);
-        } else if($_REQUEST["function"] == "getInfo") {
+        } else if($_REQUEST["function"] == "getLengths") {
             $words = str_split($str);
             $data = array();
+            
             for($j=2; $j <8; $j++)
                 combinationUtil($_REQUEST["rack"], strlen($_REQUEST["rack"]), $j, 0, $data, 0);
-            //echo json_encode($result);
-            $lengthsandwords = array();
-            $lengthsandwords['lengths'] = $lengths;
-            $lengthsandwords['words'] = $answers;
-            echo json_encode($lengthsandwords);
-        } 
+    
+            $lengths = array_merge(...$lengths);
+            echo json_encode($lengths);
+        } else if($_REQUEST["function"] == "checkWord") {
+            $words = str_split($str);
+            $data = array();
+
+            for($j=2; $j <8; $j++)
+                combinationUtil($_REQUEST["rack"], strlen($_REQUEST["rack"]), $j, 0, $data, 0);
+
+            $checkWordResult = array();
+            if(in_array($_REQUEST['input'], $answers)) {
+                $checkWordResult['successful'] = true;
+                $checkWordResult['index'] = array_search($_REQUEST['input'], $answers);
+                $checkWordResult['word'] = $_REQUEST['input'];
+            } else {
+                $checkWordResult['successful'] = false;
+                $checkWordResult['index'] = NULL;
+                $checkWordResult['word'] = "word" . $_REQUEST['input'];
+            }
+            echo json_encode($checkWordResult);
+        }
     }
  
     
